@@ -186,6 +186,12 @@ export function aggregateStats(account, mmr, matches) {
     accountLevel: account.account_level || 0,
     rankTier: mmr?.current_data?.currenttierpatched || "Unranked",
     agentsByMap: buildAgentsByMap(matches, account.puuid),
+    accountCard: account.card || null,
+    mmr: mmr ? {
+      current_data: mmr.current_data || null,
+      highest_rank: mmr.highest_rank || null,
+      seasonal: mmr.seasonal || mmr.by_season || null,
+    } : null,
   };
 }
 

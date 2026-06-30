@@ -1,4 +1,4 @@
-const RANK_BENCHMARKS = {
+export const RANK_BENCHMARKS = {
   Iron: { kd: 0.75, hs: 8, winrate: 47, dpg: 100, assists: 3.5 },
   Bronze: { kd: 0.82, hs: 11, winrate: 49, dpg: 115, assists: 3.8 },
   Silver: { kd: 0.90, hs: 14, winrate: 50, dpg: 125, assists: 4.0 },
@@ -10,7 +10,7 @@ const RANK_BENCHMARKS = {
   Radiant: { kd: 1.15, hs: 31, winrate: 51, dpg: 172, assists: 5.2 },
 };
 
-function getRankGroup(rankName) {
+export function getRankGroup(rankName) {
   if (!rankName) return "Gold";
   const name = rankName.toLowerCase();
   if (name.startsWith("iron")) return "Iron";

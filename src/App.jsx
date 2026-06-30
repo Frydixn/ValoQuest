@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Header from "./components/Header";
-import ProfileBar from "./components/ProfileBar";
+import PlayerProfileBar from "./components/PlayerProfileBar";
 import ActStatsBar from "./components/ActStatsBar";
 import StatsGrid from "./components/StatsGrid";
 import MapAgentsPanel from "./components/MapAgentsPanel";
@@ -79,6 +79,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
     account: {
       puuid: account.puuid, name: account.name,
       tag: account.tag, region, account_level: account.account_level,
+      card: account.card || null,
     },
     stats, actStats, mmrHistory: [], achievements, matches,
     summary: {
@@ -172,7 +173,10 @@ export default function App() {
           }
 
           setPlayerData({
-            account: { puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level },
+            account: { 
+              puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
+              card: snapshot.stats.accountCard || null
+            },
             stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
             achievements,
             matches,
@@ -266,12 +270,14 @@ export default function App() {
 
           {!loading && playerData && (
             <div className="results-container">
-              <ProfileBar
+              <PlayerProfileBar
                 account={playerData.account}
+                stats={playerData.stats}
+                latestAct={playerData.matches?.[0]?.metadata?.season || { short: playerData.matches?.[0]?.metadata?.season_id || "E11A4" }}
                 summary={playerData.summary}
-                rank={playerData.stats.rankTier}
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
+                onGoToTracker={() => setActiveTab("tracker")}
               />
 
               {playerData.actStats && <ActStatsBar actStats={playerData.actStats} />}

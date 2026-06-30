@@ -2220,3 +2220,511 @@ footer {
     margin-bottom: 4px;
   }
 }
+
+/* ==========================================
+   ValoQuest Player Profile Bar Styles
+   ========================================== */
+
+.player-profile-bar {
+  display: flex;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 15px var(--shadow);
+  width: 100%;
+  overflow: hidden;
+}
+
+.ppb-section {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-width: 0;
+  border-right: 1px solid var(--line);
+}
+
+.ppb-section:last-child {
+  border-right: none;
+}
+
+/* Section sizes */
+.ppb-identity {
+  flex: 1.2;
+}
+
+.ppb-rank {
+  flex: 1.5;
+}
+
+.ppb-perf {
+  flex: 1.3;
+}
+
+.ppb-agents {
+  flex: 2;
+  border-right: none;
+}
+
+.ppb-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.ppb-section-icon {
+  color: var(--red);
+}
+
+/* 1. PLAYER IDENTITY STYLES */
+.ppb-identity-card-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.ppb-player-card {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.ppb-player-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ppb-player-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+.ppb-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ppb-username {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ppb-username .tag {
+  color: var(--text-dim);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.ppb-refresh-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.ppb-refresh-btn:hover {
+  color: var(--red);
+}
+
+.ppb-lvl-region {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.ppb-puuid-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-dim);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 3px 6px;
+  border-radius: 2px;
+  border: 1px dashed transparent;
+  transition: border-color 0.2s, background 0.2s;
+  width: fit-content;
+}
+
+.ppb-puuid-wrap:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-hover);
+  color: var(--text);
+}
+
+.ppb-puuid-wrap .copy-icon {
+  opacity: 0.6;
+}
+
+/* 2. RANK STATUS STYLES */
+.ppb-rank-cols {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+}
+
+.rank-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rank-col.line-separator {
+  border-left: 1px solid var(--line);
+  padding-left: 16px;
+}
+
+.rank-col-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.rank-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rank-icon-wrap {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rank-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rank-icon-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+}
+
+.rank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rank-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rank-rr {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.rank-elo {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* 3. PERFORMANCE OVERVIEW STYLES */
+.ppb-act-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 70, 85, 0.1);
+  color: var(--red);
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 70, 85, 0.2);
+}
+
+.ppb-details-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.ppb-details-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(255, 70, 85, 0.04);
+}
+
+.ppb-perf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  height: 100%;
+}
+
+.perf-cell {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.perf-cell .val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.perf-cell .lbl {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* 4. AGENTS & MAPS STYLES */
+.ppb-games-count {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.ppb-agents-tab-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.ppb-agents-tab-nav .tab-link {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.ppb-agents-tab-nav .tab-link:hover {
+  color: var(--text);
+}
+
+.ppb-agents-tab-nav .tab-link.active {
+  color: var(--red);
+}
+
+.ppb-agents-tab-nav .tab-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--red);
+}
+
+.ppb-empty-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+
+.ppb-table-scroll-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.ppb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ppb-table th {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.ppb-table td {
+  padding: 6px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.ppb-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.item-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-pic-wrap {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.agent-pic-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.agent-pic-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.item-name-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-name-text .name {
+  font-weight: 600;
+}
+
+.item-name-text .sub {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.ppb-view-more {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-dim);
+  padding: 6px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 4px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.ppb-view-more:hover {
+  color: var(--red);
+  background: rgba(255, 70, 85, 0.02);
+}
+
+/* ==========================================
+   Responsive Player Profile Bar
+   ========================================== */
+
+@media (max-width: 1100px) {
+  .player-profile-bar {
+    flex-wrap: wrap;
+  }
+  
+  .ppb-identity, .ppb-perf {
+    flex: 1 1 45%;
+  }
+  
+  .ppb-rank, .ppb-agents {
+    flex: 1 1 50%;
+  }
+}
+
+@media (max-width: 880px) {
+  .player-profile-bar {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .ppb-section {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 16px;
+  }
+  
+  .ppb-section:last-child {
+    border-bottom: none;
+  }
+  
+  .rank-col.line-separator {
+    border-left: 1px solid var(--line);
+    padding-left: 12px;
+  }
+}
