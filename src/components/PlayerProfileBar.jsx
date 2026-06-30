@@ -152,7 +152,8 @@ export default function PlayerProfileBar({
 
   // Act / Season tag
   const currentActTag = latestAct?.season?.short || stats.mmr?.current_data?.season_id?.toUpperCase() || "E11A4";
-  
+
+  // 4. Dynamic calculation of Agent and Map statistics from matches
   const computedAgents = (() => {
     if (!rawMatches.length) return [];
     const data = {};
@@ -205,7 +206,11 @@ export default function PlayerProfileBar({
       const deaths = me.stats?.deaths || 0;
       const dmg = me.damage_made || me.stats?.damage || 0;
       const hsCount = me.stats?.headshots || 0;
-      const shots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
+      const shots = (m.stats?.headshots || 0) + (m.stats?.bodyshots || 0) + (m.stats?.legshots || 0); // fallback using standard me
+      const playerHs = me.stats?.headshots || 0;
+      const playerBody = me.stats?.bodyshots || 0;
+      const playerLeg = me.stats?.legshots || 0;
+      const mapShots = playerHs + playerBody + playerLeg;
       const rounds = m.metadata?.rounds_played || 1;
 
       if (!data[map]) {
@@ -216,8 +221,8 @@ export default function PlayerProfileBar({
       data[map].kills += kills;
       data[map].deaths += deaths;
       data[map].dmg += dmg;
-      data[map].hs += hsCount;
-      data[map].shots += shots;
+      data[map].hs += playerHs;
+      data[map].shots += mapShots;
       data[map].rounds += rounds;
     });
 
@@ -242,133 +247,158 @@ export default function PlayerProfileBar({
 
   return (
     <div className="player-profile-bar">
-      {/* 1. PLAYER IDENTITY */}
-      <div className="ppb-section ppb-identity">
-        <div className="ppb-section-title">
-          <User size={12} className="ppb-section-icon" />
-          <span>PLAYER IDENTITY</span>
-        </div>
-        
-        <div className="ppb-identity-card-row">
-          <div className="ppb-player-card">
-            {cardSmallUrl ? (
-              <img src={cardSmallUrl} alt="Player Card" className="ppb-player-card-img" />
-            ) : (
-              <div className="ppb-player-card-fallback font-oswald">
-                {account.name?.substring(0, 2).toUpperCase()}
+      {/* LEFT COLUMN: IDENTITY, RANK, AND PERFORMANCE */}
+      <div className="ppb-left-column">
+        <div className="ppb-left-top-row">
+          {/* 1. PLAYER IDENTITY */}
+          <div className="ppb-section ppb-identity">
+            <div className="ppb-section-title">
+              <User size={12} className="ppb-section-icon" />
+              <span>PLAYER IDENTITY</span>
+            </div>
+            
+            <div className="ppb-identity-card-row">
+              <div className="ppb-player-card">
+                {cardSmallUrl ? (
+                  <img src={cardSmallUrl} alt="Player Card" className="ppb-player-card-img" />
+                ) : (
+                  <div className="ppb-player-card-fallback font-oswald">
+                    {account.name?.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
               </div>
-            )}
+              
+              <div className="ppb-player-info">
+                <div className="ppb-username font-oswald">
+                  {account.name}
+                  <span className="tag">#{account.tag}</span>
+                  <button 
+                    onClick={onRefresh} 
+                    className="ppb-refresh-btn" 
+                    disabled={refreshing} 
+                    title="Actualizar estadísticas"
+                  >
+                    <RefreshCw size={12} className={refreshing ? "spin-animation" : ""} />
+                  </button>
+                </div>
+                <div className="ppb-lvl-region">
+                  LVL {account.account_level || stats.accountLevel || "—"} | {account.region?.toUpperCase() || "—"}
+                </div>
+                {account.puuid && (
+                  <div className="ppb-puuid-wrap" onClick={handleCopyPuuid} title="Copiar PUUID completo">
+                    <span className="puuid-text">PUUID: {puuidTruncated}</span>
+                    {copied ? <Check size={11} className="text-win" /> : <Copy size={11} className="copy-icon" />}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          
-          <div className="ppb-player-info">
-            <div className="ppb-username font-oswald">
-              {account.name}
-              <span className="tag">#{account.tag}</span>
-              <button 
-                onClick={onRefresh} 
-                className="ppb-refresh-btn" 
-                disabled={refreshing} 
-                title="Actualizar estadísticas"
-              >
-                <RefreshCw size={12} className={refreshing ? "spin-animation" : ""} />
+
+          {/* 2. RANK STATUS */}
+          <div className="ppb-section ppb-rank">
+            <div className="ppb-section-title">
+              <Shield size={12} className="ppb-section-icon" />
+              <span>RANK STATUS</span>
+            </div>
+
+            <div className="ppb-rank-cols">
+              <div className="rank-col">
+                <span className="rank-col-lbl">CURRENT</span>
+                <div className="rank-details">
+                  <div className="rank-icon-wrap">
+                    {currentRankIcon ? (
+                      <img src={currentRankIcon} alt={currentRankName} className="rank-icon-img" />
+                    ) : (
+                      <div className="rank-icon-fallback font-oswald">UR</div>
+                    )}
+                  </div>
+                  <div className="rank-info">
+                    <span className="rank-name font-oswald">{currentRankName}</span>
+                    <span className="rank-rr">
+                      {currentRR} RR <span className={rrChangeClass}>{rrChangeText}</span>
+                    </span>
+                    <span className="rank-elo">ELO {currentELO}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rank-col line-separator">
+                <span className="rank-col-lbl">PEAK</span>
+                <div className="rank-details">
+                  <div className="rank-icon-wrap">
+                    {peakRankIcon ? (
+                      <img src={peakRankIcon} alt={peakRankName} className="rank-icon-img" />
+                    ) : (
+                      <div className="rank-icon-fallback font-oswald">UR</div>
+                    )}
+                  </div>
+                  <div className="rank-info">
+                    <span className="rank-name font-oswald">{peakRankName}</span>
+                    <span className="rank-rr font-oswald text-gold">{peakRankSeason}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. PERFORMANCE OVERVIEW WIDE */}
+        <div className="ppb-section ppb-perf-wide">
+          <div className="ppb-section-title" style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <Activity size={12} className="ppb-section-icon" />
+              <span>PERFORMANCE OVERVIEW</span>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <span className="ppb-act-badge">{currentActTag}</span>
+              <button className="ppb-details-btn font-oswald" onClick={onGoToTracker}>
+                DETAILS
               </button>
             </div>
-            <div className="ppb-lvl-region">
-              LVL {account.account_level || stats.accountLevel || "—"} | {account.region?.toUpperCase() || "—"}
-            </div>
-            {account.puuid && (
-              <div className="ppb-puuid-wrap" onClick={handleCopyPuuid} title="Copiar PUUID completo">
-                <span className="puuid-text">PUUID: {puuidTruncated}</span>
-                {copied ? <Check size={11} className="text-win" /> : <Copy size={11} className="copy-icon" />}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. RANK STATUS */}
-      <div className="ppb-section ppb-rank">
-        <div className="ppb-section-title">
-          <Shield size={12} className="ppb-section-icon" />
-          <span>RANK STATUS</span>
-        </div>
-
-        <div className="ppb-rank-cols">
-          <div className="rank-col">
-            <span className="rank-col-lbl">CURRENT</span>
-            <div className="rank-details">
-              <div className="rank-icon-wrap">
-                {currentRankIcon ? (
-                  <img src={currentRankIcon} alt={currentRankName} className="rank-icon-img" />
-                ) : (
-                  <div className="rank-icon-fallback font-oswald">UR</div>
-                )}
-              </div>
-              <div className="rank-info">
-                <span className="rank-name font-oswald">{currentRankName}</span>
-                <span className="rank-rr">
-                  {currentRR} RR <span className={rrChangeClass}>{rrChangeText}</span>
-                </span>
-                <span className="rank-elo">ELO {currentELO}</span>
-              </div>
-            </div>
           </div>
 
-          <div className="rank-col line-separator">
-            <span className="rank-col-lbl">PEAK</span>
-            <div className="rank-details">
-              <div className="rank-icon-wrap">
-                {peakRankIcon ? (
-                  <img src={peakRankIcon} alt={peakRankName} className="rank-icon-img" />
-                ) : (
-                  <div className="rank-icon-fallback font-oswald">UR</div>
-                )}
-              </div>
-              <div className="rank-info">
-                <span className="rank-name font-oswald">{peakRankName}</span>
-                <span className="rank-rr font-oswald text-gold">{peakRankSeason}</span>
-              </div>
+          <div className="ppb-perf-grid-wide">
+            <div className="perf-cell">
+              <span className={adrClass}>{adr}</span>
+              <span className="lbl" title="Average Damage per Round">ADR (avg)</span>
+            </div>
+            <div className="perf-cell">
+              <span className={kdClass}>{kd}</span>
+              <span className="lbl">K/D RATIO</span>
+            </div>
+            <div className="perf-cell">
+              <span className={hsClass}>{hs}%</span>
+              <span className="lbl">HEADSHOT %</span>
+            </div>
+            <div className="perf-cell">
+              <span className={winrateClass}>{winrate}%</span>
+              <span className="lbl">WIN %</span>
+            </div>
+            
+            {/* EXTRA TACTICAL STATS */}
+            <div className="perf-cell">
+              <span className="val font-oswald">{stats.totalKills}/{stats.totalDeaths}/{stats.totalAssists}</span>
+              <span className="lbl">K/D/A TOTAL</span>
+            </div>
+            <div className="perf-cell">
+              <span className="val font-oswald text-cyan">{stats.mvps}</span>
+              <span className="lbl">PARTIDAS MVP</span>
+            </div>
+            <div className="perf-cell">
+              <span className="val font-oswald text-gold">{stats.aces}</span>
+              <span className="lbl">ACES</span>
+            </div>
+            <div className="perf-cell">
+              <span className="val font-oswald">
+                <span className="text-win">{stats.totalWins}W</span> - <span className="text-loss">{numMatches - stats.totalWins}L</span>
+              </span>
+              <span className="lbl">RÉCORD GENERAL</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. PERFORMANCE OVERVIEW */}
-      <div className="ppb-section ppb-perf">
-        <div className="ppb-section-title" style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <Activity size={12} className="ppb-section-icon" />
-            <span>PERFORMANCE OVERVIEW</span>
-          </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span className="ppb-act-badge">{currentActTag}</span>
-            <button className="ppb-details-btn font-oswald" onClick={onGoToTracker}>
-              DETAILS
-            </button>
-          </div>
-        </div>
-
-        <div className="ppb-perf-grid">
-          <div className="perf-cell">
-            <span className={adrClass}>{adr}</span>
-            <span className="lbl" title="Daño Promedio por Partida (ADR)">ADR (avg)</span>
-          </div>
-          <div className="perf-cell">
-            <span className={kdClass}>{kd}</span>
-            <span className="lbl">K/D RATIO</span>
-          </div>
-          <div className="perf-cell">
-            <span className={hsClass}>{hs}%</span>
-            <span className="lbl">HEADSHOT %</span>
-          </div>
-          <div className="perf-cell">
-            <span className={winrateClass}>{winrate}%</span>
-            <span className="lbl">WIN %</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. AGENTS & MAPS */}
+      {/* RIGHT COLUMN: AGENTS & MAPS */}
       <div className="ppb-section ppb-agents">
         <div className="ppb-section-title" style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
