@@ -165,11 +165,28 @@ export default function App() {
               .from("player_matches")
               .select("match_data")
               .eq("puuid", player.puuid);
-            if (storedMatchesRaw) {
+            if (storedMatchesRaw && storedMatchesRaw.length > 0) {
               matches = storedMatchesRaw.map((row) => row.match_data) || [];
             }
           } catch (e) {
             console.warn("No se pudieron leer partidas para el snapshot:", e.message);
+          }
+
+          if (matches.length === 0) {
+            console.warn("Snapshot sin partidas en DB. Intentando cargar de API...");
+            try {
+              matches = await getFullMatchHistory(player.region, player.name, player.tag);
+              if (matches && matches.length > 0) {
+                const rowsToInsert = matches.map((m) => ({
+                  puuid: player.puuid,
+                  match_id: m.metadata?.matchid || m.metadata?.match_id,
+                  match_data: m,
+                }));
+                await supabase.from("player_matches").upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
+              }
+            } catch (err) {
+              console.warn("No se pudieron obtener partidas de API para el snapshot:", err.message);
+            }
           }
 
           setPlayerData({

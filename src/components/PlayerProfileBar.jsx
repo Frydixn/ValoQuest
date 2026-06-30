@@ -67,7 +67,7 @@ export default function PlayerProfileBar({
   // 2. Rank calculation helpers
   const getRankIconUrl = (tierId) => {
     if (tierId === undefined || tierId === null || tierId === 0) return null;
-    return `https://media.valorant-api.com/competitivetiers/03b2d8df-8591-4958-8fb3-995fc503df84/${tierId}/largeicon.png`;
+    return `https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/${tierId}/largeicon.png`;
   };
 
   // Peak Rank status parsing
@@ -242,7 +242,7 @@ export default function PlayerProfileBar({
     : "";
 
   const itemsToShow = activeTab === "agents" ? computedAgents : computedMaps;
-  const hasEnoughData = itemsToShow.length >= 3;
+  const hasEnoughData = itemsToShow.length > 0;
   const visibleItems = expanded ? itemsToShow : itemsToShow.slice(0, 4);
 
   return (
