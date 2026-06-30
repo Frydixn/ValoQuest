@@ -43,7 +43,7 @@ export async function getMatchHistory(region, name, tag, size = 20) {
 export async function getFullMatchHistory(region, name, tag) {
   const allMatches = [];
   let page = 1;
-  const maxPages = 5;
+  const maxPages = 15;
 
   while (page <= maxPages) {
     try {
@@ -91,9 +91,9 @@ export function buildAgentsByMap(matches, puuid) {
 
   const targetMatches = latestSeason
     ? matches.filter((m) => {
-        const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
-        return mSeason === latestSeason;
-      })
+      const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
+      return mSeason === latestSeason;
+    })
     : matches;
 
   const data = {};
