@@ -49,6 +49,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
       .eq("puuid", puuid);
     if (!dbErr && allStoredMatchesRaw) {
       matches = allStoredMatchesRaw.map((row) => row.match_data) || [];
+      matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
     }
   } catch (err) {
     console.warn("No se pudieron leer partidas de Supabase:", err.message);
@@ -148,7 +149,16 @@ export default function App() {
         .from("players").select("*")
         .ilike("name", name).ilike("tag", tag).maybeSingle();
 
+      let shouldLoadFromSnapshot = false;
       if (player) {
+        const lastUpdated = player.last_updated ? new Date(player.last_updated).getTime() : 0;
+        const cacheDuration = 5 * 60 * 1000; // 5 minutes
+        if (Date.now() - lastUpdated < cacheDuration) {
+          shouldLoadFromSnapshot = true;
+        }
+      }
+
+      if (shouldLoadFromSnapshot) {
         const { data: snapshot } = await supabase
           .from("player_stats_snapshots").select("stats")
           .eq("puuid", player.puuid)
@@ -167,6 +177,7 @@ export default function App() {
               .eq("puuid", player.puuid);
             if (storedMatchesRaw && storedMatchesRaw.length > 0) {
               matches = storedMatchesRaw.map((row) => row.match_data) || [];
+              matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
             }
           } catch (e) {
             console.warn("No se pudieron leer partidas para el snapshot:", e.message);
@@ -228,8 +239,77 @@ export default function App() {
         }
       }
 
-      const result = await loadOrSyncPlayerProfile(name, tag);
-      setPlayerData(result);
+      // If cache is stale or missing, load fresh from API with snapshot fallback on error
+      try {
+        const result = await loadOrSyncPlayerProfile(name, tag);
+        setPlayerData(result);
+      } catch (apiErr) {
+        console.warn("Fallo al obtener datos frescos de la API en búsqueda:", apiErr.message);
+        if (player) {
+          const { data: snapshot } = await supabase
+            .from("player_stats_snapshots").select("stats")
+            .eq("puuid", player.puuid)
+            .order("created_at", { ascending: false })
+            .limit(1).maybeSingle();
+
+          if (snapshot?.stats) {
+            const achievements = evaluateAchievements(snapshot.stats);
+            const unlockedCount = achievements.filter((a) => a.unlocked).length;
+            
+            let matches = [];
+            try {
+              const { data: storedMatchesRaw } = await supabase
+                .from("player_matches")
+                .select("match_data")
+                .eq("puuid", player.puuid);
+              if (storedMatchesRaw && storedMatchesRaw.length > 0) {
+                matches = storedMatchesRaw.map((row) => row.match_data) || [];
+                matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
+              }
+            } catch (e) {
+              console.warn("Error leyendo partidas de Supabase para fallback de error:", e.message);
+            }
+
+            if (!snapshot.stats.trend && matches.length > 0) {
+              const trendMatches = matches.slice(0, 15).reverse();
+              const trend = [];
+              let winsCount = 0;
+              trendMatches.forEach((m, idx) => {
+                const me = m.players?.all_players?.find((p) => p.puuid === player.puuid);
+                if (!me) return;
+                const kills = me.stats?.kills || 0;
+                const deaths = me.stats?.deaths || 0;
+                const kd = deaths > 0 ? Number((kills / deaths).toFixed(2)) : Number(kills.toFixed(2));
+                const hsCount = me.stats?.headshots || 0;
+                const totalShots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
+                const hs = totalShots > 0 ? Math.round((hsCount / totalShots) * 100) : 0;
+                const myTeam = me.team?.toLowerCase();
+                const won = m.teams?.[myTeam]?.has_won ?? false;
+                if (won) winsCount++;
+                const winrate = Math.round((winsCount / (idx + 1)) * 100);
+                const mapName = m.metadata?.map || "Unknown";
+                const label = mapName.substring(0, 3);
+                trend.push({ kd, hs, winrate, label });
+              });
+              snapshot.stats.trend = trend;
+            }
+
+            setPlayerData({
+              account: { 
+                puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
+                card: snapshot.stats.accountCard || null
+              },
+              stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
+              achievements,
+              matches,
+              summary: { total: achievements.length, unlocked: unlockedCount, percent: Math.round((unlockedCount / achievements.length) * 100) },
+            });
+            setLoading(false);
+            return;
+          }
+        }
+        throw apiErr;
+      }
     } catch (err) {
       setError(err.message || "Error al buscar el jugador. Verificá los datos e intentá de nuevo.");
     } finally {
