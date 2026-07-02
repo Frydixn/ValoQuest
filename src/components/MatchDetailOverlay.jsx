@@ -12,6 +12,15 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
     setSelectedRoundIndex(null);
   }, [puuid, match]);
 
+  // Lock body scroll when overlay is active, restore on close
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
   // Dynamic fetch of playable agent icons from Valorant-API
   useEffect(() => {
     fetch("https://valorant-api.com/v1/agents?isPlayableCharacter=true")
@@ -41,6 +50,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const allPlayers = match.players?.all_players || [];
   const me = allPlayers.find((p) => p.puuid === puuid) || {};
   const myTeam = me.team?.toLowerCase() || "blue";
+
+  // Derive player card wide art url
+  const playerCardUuid = me.player_card || me.card_id || (me.card && typeof me.card === "object" ? me.card.id : (typeof me.card === "string" ? me.card : null));
+  const playerCardWideUrl = (me.card && typeof me.card === "object" && me.card.wide) 
+    ? me.card.wide 
+    : (playerCardUuid ? `https://media.valorant-api.com/playercards/${playerCardUuid}/wideart.png` : null);
 
   // Game scores
   const scoreWon = match.teams?.[myTeam]?.rounds_won ?? 0;
@@ -94,6 +109,16 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
     "#f43f5e", // Crimson Red
   ];
 
+  // Map party_id to active color indices
+  const premades = {};
+  let partyColorIdx = 0;
+  allPlayers.forEach((p) => {
+    if (p.party_id && partyCounts[p.party_id] > 1 && !premades[p.party_id]) {
+      premades[p.party_id] = partyColors[partyColorIdx % partyColors.length];
+      partyColorIdx++;
+    }
+  });
+
   const multiParties = Object.entries(partyCounts)
     .filter(([_, count]) => count > 1)
     .map(([partyId]) => partyId);
@@ -133,7 +158,15 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
         </div>
 
         {/* Hero Section */}
-        <div className="mdo-hero">
+        <div 
+          className="mdo-hero"
+          style={playerCardWideUrl ? {
+            backgroundImage: `linear-gradient(to right, rgba(15, 25, 35, 0.95) 25%, rgba(15, 25, 35, 0.3) 100%), url(${playerCardWideUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat"
+          } : {}}
+        >
           <div className="mdo-hero-card-row">
             <div className="mdo-hero-agent-pic">
               {myAgentIcon ? (
