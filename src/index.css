@@ -4181,6 +4181,12 @@ footer {
   border-radius: 4px;
 }
 
+.mdo-feed-event-item.selected-gold {
+  border: 1px solid var(--gold) !important;
+  background: rgba(234, 179, 8, 0.08) !important;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);
+}
+
 .mdo-feed-event-item.kill {
   border-left: 2px solid var(--line);
 }

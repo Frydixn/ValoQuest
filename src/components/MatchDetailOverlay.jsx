@@ -7,13 +7,19 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const [selectedPlayerPuuid, setSelectedPlayerPuuid] = useState(puuid);
   const [selectedRoundIndex, setSelectedRoundIndex] = useState(null);
   const [selectedRoundTab, setSelectedRoundTab] = useState(1);
+  const [selectedEventIndex, setSelectedEventIndex] = useState(0);
   const [mapsData, setMapsData] = useState([]);
 
   useEffect(() => {
     setSelectedPlayerPuuid(puuid);
     setSelectedRoundIndex(null);
     setSelectedRoundTab(1);
+    setSelectedEventIndex(0);
   }, [puuid, match]);
+
+  useEffect(() => {
+    setSelectedEventIndex(0);
+  }, [selectedRoundTab]);
 
   // Fetch Valorant maps info for minimap plotting
   useEffect(() => {
@@ -1083,6 +1089,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 // Sort timeline ascending by time
                 roundEventsList.sort((a, b) => a.time - b.time);
 
+                const selectedEvent = roundEventsList[selectedEventIndex];
+
                 return (
                   <div className="mdo-round-visualizer-container">
                     {/* Left side: Minimap */}
@@ -1102,7 +1110,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                               {/* SVG Trajectory Lines */}
                               <svg className="mdo-minimap-canvas-svg" viewBox="0 0 100 100">
-                                {roundKills.map((k, idx) => {
+                                {selectedEvent && selectedEvent.type === "kill" && (() => {
+                                  const k = selectedEvent.data;
                                   const killerLoc = k.killer_location;
                                   const victimLoc = k.victim_death_location;
 
@@ -1115,7 +1124,6 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                                   return (
                                     <line 
-                                      key={idx}
                                       x1={killerPct.x}
                                       y1={killerPct.y}
                                       x2={victimPct.x}
@@ -1125,81 +1133,84 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                       strokeDasharray="2 1"
                                     />
                                   );
-                                })}
+                                })()}
                               </svg>
 
-                              {/* Killer & Victim Coordinates Markers */}
-                              {roundKills.map((k, idx) => {
-                                const killerLocObj = k.player_locations?.find(pl => pl.player_puuid === k.killer_puuid);
+                              {/* Active/Alive Player Markers for Selected Kill */}
+                              {selectedEvent && selectedEvent.type === "kill" && (() => {
+                                const k = selectedEvent.data;
+                                return (k.player_locations || []).map((pl, idx) => {
+                                  const plPlayer = allPlayers.find(p => p.puuid === pl.player_puuid);
+                                  if (!plPlayer) return null;
+
+                                  const character = plPlayer.character || "";
+                                  const icon = agentIcons[character.toLowerCase()];
+                                  const pct = convertCoords(pl.location.x, pl.location.y);
+                                  const angle = pl.view_radiant || pl.view_radians || 0;
+                                  const team = plPlayer.team?.toLowerCase() || "blue";
+
+                                  // Check if this player is the killer
+                                  const isKiller = pl.player_puuid === k.killer_puuid;
+
+                                  return (
+                                    <div 
+                                      key={`pl-${idx}`}
+                                      className={`mdo-minimap-marker player-alive ${team} ${isKiller ? "killer" : ""}`}
+                                      style={{ left: `${pct.x}%`, top: `${pct.y}%` }}
+                                      title={`${plPlayer.name} (${character})`}
+                                    >
+                                      {icon ? <img src={icon} alt={character} /> : <span>{character.substring(0, 2)}</span>}
+                                      <div 
+                                        className="player-direction-pointer" 
+                                        style={{ transform: `rotate(${angle}rad)` }}
+                                      />
+                                    </div>
+                                  );
+                                });
+                              })()}
+
+                              {/* Victim Marker for Selected Kill */}
+                              {selectedEvent && selectedEvent.type === "kill" && (() => {
+                                const k = selectedEvent.data;
+                                const victimLoc = k.victim_death_location;
+                                if (!isValidLoc(victimLoc)) return null;
+
+                                const victimPct = convertCoords(victimLoc.x, victimLoc.y);
+                                const victimPlayer = allPlayers.find(p => p.puuid === k.victim_puuid);
+                                const victimCharacter = victimPlayer?.character || "";
+                                const victimIcon = agentIcons[victimCharacter.toLowerCase()];
+                                const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
                                 const victimLocObj = k.player_locations?.find(pl => pl.player_puuid === k.victim_puuid);
-                                
-                                const killerAngle = killerLocObj?.view_radiant || killerLocObj?.view_radians || 0;
                                 const victimAngle = victimLocObj?.view_radiant || victimLocObj?.view_radians || 0;
 
-                                const killerLoc = k.killer_location;
-                                const victimLoc = k.victim_death_location;
-                                
-                                const killerPct = isValidLoc(killerLoc) ? convertCoords(killerLoc.x, killerLoc.y) : null;
-                                const victimPct = isValidLoc(victimLoc) ? convertCoords(victimLoc.x, victimLoc.y) : null;
-
-                                const killerPlayer = allPlayers.find(p => p.puuid === k.killer_puuid);
-                                const victimPlayer = allPlayers.find(p => p.puuid === k.victim_puuid);
-
-                                const killerCharacter = killerPlayer?.character || "";
-                                const victimCharacter = victimPlayer?.character || "";
-
-                                const killerTeam = killerPlayer?.team?.toLowerCase() || "blue";
-                                const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
-
-                                const killerIcon = agentIcons[killerCharacter.toLowerCase()];
-                                const victimIcon = agentIcons[victimCharacter.toLowerCase()];
-
-                                return (
-                                  <React.Fragment key={idx}>
-                                    {killerPct && killerIcon && (
+                                return victimIcon ? (
+                                  <div 
+                                    className={`mdo-minimap-marker victim ${victimTeam}`}
+                                    style={{ left: `${victimPct.x}%`, top: `${victimPct.y}%` }}
+                                    title={`${victimPlayer?.name || k.victim_display_name} (${victimCharacter})`}
+                                  >
+                                    <img src={victimIcon} alt={victimCharacter} />
+                                    <div className="victim-cross">❌</div>
+                                    {victimLocObj && (
                                       <div 
-                                        className={`mdo-minimap-marker killer ${killerTeam}`}
-                                        style={{ left: `${killerPct.x}%`, top: `${killerPct.y}%` }}
-                                        title={`${killerPlayer?.name || k.killer_display_name} (${killerCharacter})`}
-                                      >
-                                        <img src={killerIcon} alt={killerCharacter} />
-                                        {killerLocObj && (
-                                          <div 
-                                            className="player-direction-pointer" 
-                                            style={{ transform: `rotate(${killerAngle}rad)` }}
-                                          />
-                                        )}
-                                      </div>
+                                        className="player-direction-pointer" 
+                                        style={{ transform: `rotate(${victimAngle}rad)` }}
+                                      />
                                     )}
-                                    {victimPct && victimIcon && (
-                                      <div 
-                                        className={`mdo-minimap-marker victim ${victimTeam}`}
-                                        style={{ left: `${victimPct.x}%`, top: `${victimPct.y}%` }}
-                                        title={`${victimPlayer?.name || k.victim_display_name} (${victimCharacter})`}
-                                      >
-                                        <img src={victimIcon} alt={victimCharacter} />
-                                        <div className="victim-cross">❌</div>
-                                        {victimLocObj && (
-                                          <div 
-                                            className="player-direction-pointer" 
-                                            style={{ transform: `rotate(${victimAngle}rad)` }}
-                                          />
-                                        )}
-                                      </div>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              })}
+                                  </div>
+                                ) : null;
+                              })()}
 
                               {/* Plant Marker */}
-                              {plantEvent && isValidLoc(plantEvent.plant_location || plantEvent.location) && (() => {
-                                const plantLoc = plantEvent.plant_location || plantEvent.location;
+                              {selectedEvent && selectedEvent.type === "plant" && (() => {
+                                const plantLoc = selectedEvent.data.plant_location || selectedEvent.data.location;
+                                if (!isValidLoc(plantLoc)) return null;
                                 const plantPct = convertCoords(plantLoc.x, plantLoc.y);
                                 return (
                                   <div 
                                     className="mdo-minimap-marker spike-plant"
                                     style={{ left: `${plantPct.x}%`, top: `${plantPct.y}%` }}
-                                    title={`Spike plantada por ${plantEvent.planted_by?.display_name || "Atacante"}`}
+                                    title="Spike Plantada"
                                   >
                                     💥
                                   </div>
@@ -1207,14 +1218,15 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               })()}
 
                               {/* Defuse Marker */}
-                              {defuseEvent && isValidLoc(defuseEvent.defuse_location || defuseEvent.location) && (() => {
-                                const defuseLoc = defuseEvent.defuse_location || defuseEvent.location;
+                              {selectedEvent && selectedEvent.type === "defuse" && (() => {
+                                const defuseLoc = selectedEvent.data.defuse_location || selectedEvent.data.location;
+                                if (!isValidLoc(defuseLoc)) return null;
                                 const defusePct = convertCoords(defuseLoc.x, defuseLoc.y);
                                 return (
                                   <div 
                                     className="mdo-minimap-marker spike-defuse"
                                     style={{ left: `${defusePct.x}%`, top: `${defusePct.y}%` }}
-                                    title={`Spike desactivada por ${defuseEvent.defused_by?.display_name || "Defensor"}`}
+                                    title="Spike Desactivada"
                                   >
                                     🛡
                                   </div>
@@ -1230,7 +1242,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                       </div>
                     </div>
 
-                    {/* Right side: Event Timeline Feed */}
+                    {/* Right/Bottom: Event Timeline Feed */}
                     <div className="mdo-round-timeline-side">
                       <div className="mdo-perf-panel-card">
                         <div className="panel-header font-oswald">
@@ -1241,6 +1253,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                           <div className="mdo-round-events-feed">
                             {roundEventsList.map((ev, evIdx) => {
                               const timeStr = formatRoundTime(ev.time);
+                              const isSelected = selectedEventIndex === evIdx;
                               
                               if (ev.type === "kill") {
                                 const k = ev.data;
@@ -1254,7 +1267,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                 const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
                                 
                                 return (
-                                  <div key={evIdx} className="mdo-feed-event-item kill">
+                                  <div 
+                                    key={evIdx} 
+                                    className={`mdo-feed-event-item kill ${isSelected ? "selected-gold" : ""}`}
+                                    onClick={() => setSelectedEventIndex(evIdx)}
+                                    style={{ cursor: "pointer" }}
+                                  >
                                     <span className="event-time font-oswald">{timeStr}</span>
                                     <div className="event-details">
                                       <div className={`event-actor killer ${killerTeam}`}>
@@ -1282,7 +1300,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                 const planterIcon = agentIcons[planterCharacter.toLowerCase()];
 
                                 return (
-                                  <div key={evIdx} className="mdo-feed-event-item plant">
+                                  <div 
+                                    key={evIdx} 
+                                    className={`mdo-feed-event-item plant ${isSelected ? "selected-gold" : ""}`}
+                                    onClick={() => setSelectedEventIndex(evIdx)}
+                                    style={{ cursor: "pointer" }}
+                                  >
                                     <span className="event-time font-oswald">{timeStr}</span>
                                     <div className="event-details">
                                       <div className="event-actor plant-actor">
@@ -1304,7 +1327,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                 const defuserIcon = agentIcons[defuserCharacter.toLowerCase()];
 
                                 return (
-                                  <div key={evIdx} className="mdo-feed-event-item defuse">
+                                  <div 
+                                    key={evIdx} 
+                                    className={`mdo-feed-event-item defuse ${isSelected ? "selected-gold" : ""}`}
+                                    onClick={() => setSelectedEventIndex(evIdx)}
+                                    style={{ cursor: "pointer" }}
+                                  >
                                     <span className="event-time font-oswald">{timeStr}</span>
                                     <div className="event-details">
                                       <div className="event-actor defuse-actor">
