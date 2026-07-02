@@ -1070,7 +1070,29 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                   });
                 });
 
-                if (plantEvent) {
+                const hasPlant = plantEvent && (
+                  currentRound.bomb_planted === true ||
+                  (currentRound.bomb_planted === undefined && (
+                    plantEvent.plant_location || 
+                    plantEvent.location || 
+                    plantEvent.planted_by ||
+                    (plantEvent.plant_time_in_round && plantEvent.plant_time_in_round > 0) ||
+                    (plantEvent.plant_time && plantEvent.plant_time > 0)
+                  ))
+                );
+
+                const hasDefuse = defuseEvent && (
+                  currentRound.bomb_defused === true ||
+                  (currentRound.bomb_defused === undefined && (
+                    defuseEvent.defuse_location || 
+                    defuseEvent.location || 
+                    defuseEvent.defused_by ||
+                    (defuseEvent.defuse_time_in_round && defuseEvent.defuse_time_in_round > 0) ||
+                    (defuseEvent.defuse_time && defuseEvent.defuse_time > 0)
+                  ))
+                );
+
+                if (hasPlant) {
                   roundEventsList.push({
                     type: "plant",
                     time: plantEvent.plant_time_in_round || plantEvent.plant_time || plantEvent.time || 0,
@@ -1078,7 +1100,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                   });
                 }
 
-                if (defuseEvent) {
+                if (hasDefuse) {
                   roundEventsList.push({
                     type: "defuse",
                     time: defuseEvent.defuse_time_in_round || defuseEvent.defuse_time || defuseEvent.time || 0,
